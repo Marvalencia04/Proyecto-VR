@@ -25,18 +25,6 @@ public class CasinoStoryboardSequence : MonoBehaviour
     public Transform logoFachada;
     public GameObject canvasLogoJuego; // Canvas completo con el logo
 
-    [Header("=== RUEDAS DEL COCHE ===")]
-    [Tooltip("Ruedas delanteras")]
-    public Transform ruedaDelanteraIzq;
-    public Transform ruedaDelanteraDer;
-
-    [Tooltip("Ruedas traseras")]
-    public Transform ruedaTraseraIzq;
-    public Transform ruedaTraseraDer;
-
-    [Tooltip("Radio de las ruedas en metros (para calcular rotación)")]
-    public float radioRueda = 0.35f;
-
 
     [Header("=== EFECTOS VISUALES ===")]
     public Image pantallaFlash; // Image UI blanco para el flashazo
@@ -76,8 +64,11 @@ public class CasinoStoryboardSequence : MonoBehaviour
     private Vector3 posicionInicialCoche;
     private Quaternion rotacionInicialCoche;
     private float duracionTotalViajeCoche;
-    private Vector3 posicionAnteriorCoche;
-    private bool cocheEnMovimiento = false;
+
+    [SerializeField] private Transform Rueda1;
+    [SerializeField] private Transform Rueda2;
+    [SerializeField] private float velocidadRotacion = 50f;
+
 
     void Start()
     {
@@ -87,7 +78,7 @@ public class CasinoStoryboardSequence : MonoBehaviour
         // Guardar posición inicial
         posicionInicialCoche = coche.position;
         rotacionInicialCoche = coche.rotation;
-        posicionAnteriorCoche = coche.position;
+        
 
         // Calcular duración total del viaje en coche
         duracionTotalViajeCoche = duracionInterior1 + duracionTerceraPersona + duracionInterior2;
@@ -105,10 +96,10 @@ public class CasinoStoryboardSequence : MonoBehaviour
 
     void Update()
     {
-        // Girar ruedas mientras el coche está en movimiento
-        if (cocheEnMovimiento)
+        if (Rueda1 != null && Rueda2 != null)
         {
-            GirarRuedas();
+            Rueda1.Rotate(0f, 0f, velocidadRotacion * Time.deltaTime);
+            Rueda2.Rotate(0f, 0f, velocidadRotacion * Time.deltaTime);
         }
     }
 
@@ -236,32 +227,7 @@ public class CasinoStoryboardSequence : MonoBehaviour
         coche.position = destino;
     }
 
-    void GirarRuedas()
-    {
-        // Calcular distancia recorrida desde el último frame
-        float distanciaRecorrida = Vector3.Distance(coche.position, posicionAnteriorCoche);
 
-        // Calcular cuántos grados debe girar la rueda
-        // Fórmula: ángulo = (distancia / circunferencia) * 360
-        // Circunferencia = 2 * PI * radio
-        float circunferencia = 2f * Mathf.PI * radioRueda;
-        float anguloRotacion = (distanciaRecorrida / circunferencia) * 360f;
-
-        // Girar todas las ruedas
-        if (ruedaDelanteraIzq != null)
-            ruedaDelanteraIzq.Rotate(0, 0, anguloRotacion, Space.Self);
-
-        if (ruedaDelanteraDer != null)
-            ruedaDelanteraDer.Rotate(0, 0, anguloRotacion, Space.Self);
-
-        if (ruedaTraseraIzq != null)
-            ruedaTraseraIzq.Rotate(0, 0, anguloRotacion, Space.Self);
-
-        
-
-        // Actualizar posición anterior
-        posicionAnteriorCoche = coche.position;
-    }
 
     IEnumerator GirarHaciaPuertas(Transform camara, float duracion)
     {

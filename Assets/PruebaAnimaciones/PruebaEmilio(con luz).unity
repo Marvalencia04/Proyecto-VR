@@ -1275,6 +1275,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: casino
       objectReference: {fileID: 0}
+    - target: {fileID: 6331774252621086427, guid: 1db21cc3e6d451e4da8adf664daae47f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: d7636558dbd50f7429a53d5bc6352a44, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2115,11 +2119,6 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4379673244704792, guid: 1be61187b5d765449be824463642cb0f, type: 3}
   m_PrefabInstance: {fileID: 374541970}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &381367562 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: -9201519113608988855, guid: 6ddf1b80afd54d2499d67693ee5cc8b1, type: 3}
-  m_PrefabInstance: {fileID: 1749193963}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &412751049
 PrefabInstance:
@@ -3834,11 +3833,6 @@ MonoBehaviour:
   puntoFrentePuertas: {fileID: 682096006}
   logoFachada: {fileID: 2038043186}
   canvasLogoJuego: {fileID: 25342757}
-  ruedaDelanteraIzq: {fileID: 1792916018}
-  ruedaDelanteraDer: {fileID: 381367562}
-  ruedaTraseraIzq: {fileID: 2000431944}
-  ruedaTraseraDer: {fileID: 0}
-  radioRueda: 4.14
   pantallaFlash: {fileID: 522433441}
   velocidadCoche: 5
   velocidadCaminando: 2
@@ -3851,6 +3845,9 @@ MonoBehaviour:
   duracionFlash: 0.5
   duracionLogoVisible: 3
   tiempoBlendCamaras: 1
+  Rueda1: {fileID: 1792916018}
+  Rueda2: {fileID: 2000431944}
+  velocidadRotacion: 500
 --- !u!1001 &598925323
 PrefabInstance:
   m_ObjectHideFlags: 0
