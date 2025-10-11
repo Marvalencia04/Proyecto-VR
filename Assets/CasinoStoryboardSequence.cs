@@ -1,4 +1,4 @@
-using UnityEngine; 
+using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
 using Unity.Cinemachine;
@@ -24,6 +24,19 @@ public class CasinoStoryboardSequence : MonoBehaviour
     public Transform puntoFrentePuertas;
     public Transform logoFachada;
     public GameObject canvasLogoJuego; // Canvas completo con el logo
+
+    [Header("=== RUEDAS DEL COCHE ===")]
+    [Tooltip("Ruedas delanteras")]
+    public Transform ruedaDelanteraIzq;
+    public Transform ruedaDelanteraDer;
+
+    [Tooltip("Ruedas traseras")]
+    public Transform ruedaTraseraIzq;
+    public Transform ruedaTraseraDer;
+
+    [Tooltip("Radio de las ruedas en metros (para calcular rotación)")]
+    public float radioRueda = 0.35f;
+
 
     [Header("=== EFECTOS VISUALES ===")]
     public Image pantallaFlash; // Image UI blanco para el flashazo
@@ -63,6 +76,8 @@ public class CasinoStoryboardSequence : MonoBehaviour
     private Vector3 posicionInicialCoche;
     private Quaternion rotacionInicialCoche;
     private float duracionTotalViajeCoche;
+    private Vector3 posicionAnteriorCoche;
+    private bool cocheEnMovimiento = false;
 
     void Start()
     {
@@ -72,6 +87,7 @@ public class CasinoStoryboardSequence : MonoBehaviour
         // Guardar posición inicial
         posicionInicialCoche = coche.position;
         rotacionInicialCoche = coche.rotation;
+        posicionAnteriorCoche = coche.position;
 
         // Calcular duración total del viaje en coche
         duracionTotalViajeCoche = duracionInterior1 + duracionTerceraPersona + duracionInterior2;
@@ -87,11 +103,20 @@ public class CasinoStoryboardSequence : MonoBehaviour
         StartCoroutine(SecuenciaCompleta());
     }
 
+    void Update()
+    {
+        // Girar ruedas mientras el coche está en movimiento
+        if (cocheEnMovimiento)
+        {
+            GirarRuedas();
+        }
+    }
+
     void ConfigurarCamarasSiguenCoche()
     {
         // vcamInteriorCoche sigue al coche
         vcamInteriorCoche.Follow = coche;
-        vcamInteriorCoche.LookAt = null; // Mira hacia adelante según orientación del coche
+        //vcamInteriorCoche.LookAt = null; // Mira hacia adelante según orientación del coche
 
         // vcamTerceraPersonaCoche sigue y mira al coche
         vcamTerceraPersonaCoche.Follow = coche;
@@ -126,12 +151,15 @@ public class CasinoStoryboardSequence : MonoBehaviour
         // ========== FASE 2: Cambio a primera persona caminando ==========
         Debug.Log("Cámara 4: Caminando hacia las puertas");
 
-        // Posicionar vcamAcercamientoPuertas en la posición del coche
-        vcamAcercamientoPuertas.transform.position = coche.position + Vector3.up * 1.7f; // Altura de ojos
-        vcamAcercamientoPuertas.transform.LookAt(puntoFrentePuertas);
+        // Copiar posición y rotación de la cámara anterior (vcamInteriorCoche)
+        vcamAcercamientoPuertas.transform.position = vcamInteriorCoche.transform.position;
+        vcamAcercamientoPuertas.transform.rotation = vcamInteriorCoche.transform.rotation;
 
         ActivarCamara(vcamAcercamientoPuertas);
         yield return new WaitForSeconds(tiempoBlendCamaras);
+
+        // Girar suavemente hacia las puertas
+        yield return GirarHaciaPuertas(vcamAcercamientoPuertas.transform, 1f);
 
         // Caminar hacia las puertas
         yield return MoverCaminando(vcamAcercamientoPuertas.transform, puntoFrentePuertas.position, duracionCaminandoPuertas);
@@ -154,7 +182,7 @@ public class CasinoStoryboardSequence : MonoBehaviour
 
         // ========== FASE 4: Flashazo blanco ==========
         Debug.Log("Efecto: Flashazo blanco");
-        yield return FlashazoBlanco(duracionFlash);
+       yield return FlashazoBlanco(duracionFlash);
 
         // ========== FASE 5: Mostrar logo del juego ==========
         Debug.Log("Mostrando logo del juego");
@@ -196,11 +224,11 @@ public class CasinoStoryboardSequence : MonoBehaviour
             coche.position = Vector3.Lerp(inicio, destino, t);
 
             // Hacer que el coche mire en la dirección del movimiento
-            Vector3 direccion = destino - inicio;
+            /*Vector3 direccion = destino - inicio;
             if (direccion != Vector3.zero)
             {
                 coche.rotation = Quaternion.LookRotation(direccion);
-            }
+            }*/
 
             yield return null;
         }
@@ -208,11 +236,59 @@ public class CasinoStoryboardSequence : MonoBehaviour
         coche.position = destino;
     }
 
+    void GirarRuedas()
+    {
+        // Calcular distancia recorrida desde el último frame
+        float distanciaRecorrida = Vector3.Distance(coche.position, posicionAnteriorCoche);
+
+        // Calcular cuántos grados debe girar la rueda
+        // Fórmula: ángulo = (distancia / circunferencia) * 360
+        // Circunferencia = 2 * PI * radio
+        float circunferencia = 2f * Mathf.PI * radioRueda;
+        float anguloRotacion = (distanciaRecorrida / circunferencia) * 360f;
+
+        // Girar todas las ruedas
+        if (ruedaDelanteraIzq != null)
+            ruedaDelanteraIzq.Rotate(0, 0, anguloRotacion, Space.Self);
+
+        if (ruedaDelanteraDer != null)
+            ruedaDelanteraDer.Rotate(0, 0, anguloRotacion, Space.Self);
+
+        if (ruedaTraseraIzq != null)
+            ruedaTraseraIzq.Rotate(0, 0, anguloRotacion, Space.Self);
+
+        
+
+        // Actualizar posición anterior
+        posicionAnteriorCoche = coche.position;
+    }
+
+    IEnumerator GirarHaciaPuertas(Transform camara, float duracion)
+    {
+        Quaternion rotacionInicial = camara.rotation;
+        Vector3 direccionPuertas = (puntoFrentePuertas.position - camara.position).normalized;
+        Quaternion rotacionFinal = Quaternion.LookRotation(direccionPuertas);
+
+        float tiempoTranscurrido = 0f;
+
+        while (tiempoTranscurrido < duracion)
+        {
+            tiempoTranscurrido += Time.deltaTime;
+            float t = tiempoTranscurrido / duracion;
+            t = Mathf.SmoothStep(0, 1, t);
+
+            camara.rotation = Quaternion.Lerp(rotacionInicial, rotacionFinal, t);
+            yield return null;
+        }
+
+        camara.rotation = rotacionFinal;
+    }
+
     IEnumerator MoverCaminando(Transform camara, Vector3 destino, float duracion)
     {
         Vector3 inicio = camara.position;
         Vector3 destinoAjustado = new Vector3(destino.x, camara.position.y, destino.z); // Mantener altura
-        Quaternion rotacionInicial = camara.rotation;
+        Quaternion rotacionFija = camara.rotation; // Mantener la rotación fija durante el movimiento
 
         float tiempoTranscurrido = 0f;
 
@@ -225,10 +301,8 @@ public class CasinoStoryboardSequence : MonoBehaviour
             // Mover la cámara
             camara.position = Vector3.Lerp(inicio, destinoAjustado, t);
 
-            // Mantener mirando hacia las puertas
-            Vector3 direccionMirada = (puntoFrentePuertas.position - camara.position).normalized;
-            Quaternion rotacionObjetivo = Quaternion.LookRotation(direccionMirada);
-            camara.rotation = Quaternion.Lerp(rotacionInicial, rotacionObjetivo, t);
+            // Mantener la rotación fija (sin girar)
+            camara.rotation = rotacionFija;
 
             yield return null;
         }
