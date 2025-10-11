@@ -114,6 +114,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5724621939434979519}
     m_Modifications:
+    - target: {fileID: 4671764386411477148, guid: b601630c0d218a641b6705996525e2dd, type: 3}
+      propertyPath: m_UseGravity
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8563654270611086648, guid: b601630c0d218a641b6705996525e2dd, type: 3}
       propertyPath: m_Name
       value: PokerChip_Black
@@ -246,6 +250,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5724621939434979519}
     m_Modifications:
+    - target: {fileID: -7413842520031943704, guid: 978eb2975e3305145ac873df09d70769, type: 3}
+      propertyPath: m_UseGravity
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7021897122820535828, guid: 978eb2975e3305145ac873df09d70769, type: 3}
       propertyPath: m_Name
       value: Dice_Red
@@ -440,6 +448,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5724621939434979519}
     m_Modifications:
+    - target: {fileID: 1362325277913160927, guid: 3523156a3cbeaeb468b42f9827dacb4f, type: 3}
+      propertyPath: m_UseGravity
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3922255663346224818, guid: 3523156a3cbeaeb468b42f9827dacb4f, type: 3}
       propertyPath: m_Name
       value: Dice_White
@@ -506,6 +518,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5724621939434979519}
     m_Modifications:
+    - target: {fileID: 4948777157559129952, guid: e1d6ca519cda25b47be1c9c392076934, type: 3}
+      propertyPath: m_UseGravity
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7085839119149727733, guid: e1d6ca519cda25b47be1c9c392076934, type: 3}
       propertyPath: m_Name
       value: PokerChip_Red
@@ -572,6 +588,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5724621939434979519}
     m_Modifications:
+    - target: {fileID: -6519330565826589485, guid: 62dd4b6a69b957f47b8830c9b557d3e0, type: 3}
+      propertyPath: m_UseGravity
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2255212785480772184, guid: 62dd4b6a69b957f47b8830c9b557d3e0, type: 3}
       propertyPath: m_Enabled
       value: 1
