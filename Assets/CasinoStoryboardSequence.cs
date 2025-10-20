@@ -61,6 +61,23 @@ public class CasinoStoryboardSequence : MonoBehaviour
     [Header("=== BLEND TIMES ===")]
     public float tiempoBlendCamaras = 1f;
 
+    [Header("=== AUDIO ===")]
+
+    [Tooltip("AudioSource para la música de fondo")]
+    public AudioSource audioMusica;
+
+    [Tooltip("AudioSource para el sonido del motor del coche")]
+    public AudioSource audioMotorCoche;
+
+    [Tooltip("Clip de audio para cerrar la puerta del coche")]
+    public AudioClip audioPuertaCoche;
+
+    [Tooltip("AudioSource para los pasos de la persona caminando")]
+    public AudioSource audioPasos;
+
+    [Tooltip("AudioSource para efectos únicos (puerta)")]
+    public AudioSource audioEfectos;
+
     private Vector3 posicionInicialCoche;
     private Quaternion rotacionInicialCoche;
     private float duracionTotalViajeCoche;
@@ -90,6 +107,10 @@ public class CasinoStoryboardSequence : MonoBehaviour
         if (canvasLogoJuego != null)
             canvasLogoJuego.SetActive(false);
 
+
+        // Preparar audio
+        PrepararAudio();
+
         // Iniciar secuencia
         StartCoroutine(SecuenciaCompleta());
     }
@@ -118,6 +139,9 @@ public class CasinoStoryboardSequence : MonoBehaviour
     {
         // ========== FASE 1: Viaje en coche con cambios de cámara ==========
 
+        // Iniciar sonido del motor
+        IniciarMotorCoche();
+
         // Iniciar movimiento del coche en paralelo
         StartCoroutine(MoverCoche(puntoPuertaCoche.position, duracionTotalViajeCoche));
 
@@ -139,8 +163,14 @@ public class CasinoStoryboardSequence : MonoBehaviour
         // Esperar a que el coche termine de llegar (por si acaso)
         yield return new WaitForSeconds(0.5f);
 
+        // Detener motor del coche
+        DetenerMotorCoche();
+
         // ========== FASE 2: Cambio a primera persona caminando ==========
         Debug.Log("Cámara 4: Caminando hacia las puertas");
+
+        // Sonido de puerta del coche cerrándose
+        ReproducirPuertaCoche();
 
         // Copiar posición y rotación de la cámara anterior (vcamInteriorCoche)
         vcamAcercamientoPuertas.transform.position = vcamInteriorCoche.transform.position;
@@ -152,8 +182,14 @@ public class CasinoStoryboardSequence : MonoBehaviour
         // Girar suavemente hacia las puertas
         yield return GirarHaciaPuertas(vcamAcercamientoPuertas.transform, 1f);
 
+        // Iniciar sonido de pasos
+        IniciarPasos();
+
         // Caminar hacia las puertas
         yield return MoverCaminando(vcamAcercamientoPuertas.transform, puntoFrentePuertas.position, duracionCaminandoPuertas);
+
+        // Detener sonido de pasos
+        DetenerPasos();
 
         // ========== FASE 3: Inclinación hacia arriba para ver logo ==========
         Debug.Log("Cámara 5: Inclinando hacia arriba para ver logo");
@@ -227,6 +263,106 @@ public class CasinoStoryboardSequence : MonoBehaviour
         coche.position = destino;
     }
 
+    // ========== FUNCIONES DE AUDIO ==========
+
+    void PrepararAudio()
+    {
+        // Iniciar música de fondo
+        if (audioMusica != null)
+        {
+            audioMusica.loop = true;
+            audioMusica.Play();
+            Debug.Log("Música de fondo iniciada");
+        }
+
+        // Asegurar que todos los audios estén detenidos al inicio
+        if (audioMotorCoche != null)
+        {
+            audioMotorCoche.loop = true;
+            audioMotorCoche.Stop();
+        }
+
+        if (audioPasos != null)
+        {
+            audioPasos.loop = true;
+            audioPasos.Stop();
+        }
+
+        if (audioEfectos != null)
+        {
+            audioEfectos.loop = false;
+            audioEfectos.Stop();
+        }
+    }
+
+    void IniciarMotorCoche()
+    {
+        if (audioMotorCoche != null && !audioMotorCoche.isPlaying)
+        {
+            audioMotorCoche.Play();
+            Debug.Log("Motor del coche iniciado");
+        }
+    }
+
+    void DetenerMotorCoche()
+    {
+        if (audioMotorCoche != null && audioMotorCoche.isPlaying)
+        {
+            // Fade out suave
+            StartCoroutine(FadeOutAudio(audioMotorCoche, 0.5f));
+            Debug.Log("Motor del coche detenido");
+        }
+    }
+
+    void ReproducirPuertaCoche()
+    {
+        if (audioEfectos != null && audioPuertaCoche != null)
+        {
+            StartCoroutine(ReproducirPuertaConDelay(1f));
+        }
+    }
+
+    IEnumerator ReproducirPuertaConDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        audioEfectos.PlayOneShot(audioPuertaCoche);
+        Debug.Log("Puerta del coche cerrada");
+    }
+
+    void IniciarPasos()
+    {
+        if (audioPasos != null && !audioPasos.isPlaying)
+        {
+            audioPasos.Play();
+            Debug.Log("Pasos iniciados");
+        }
+    }
+
+    void DetenerPasos()
+    {
+        if (audioPasos != null && audioPasos.isPlaying)
+        {
+            // Fade out suave
+            StartCoroutine(FadeOutAudio(audioPasos, 0.3f));
+            Debug.Log("Pasos detenidos");
+        }
+    }
+
+    IEnumerator FadeOutAudio(AudioSource audio, float duracion)
+    {
+        float volumenInicial = audio.volume;
+        float tiempoTranscurrido = 0f;
+
+        while (tiempoTranscurrido < duracion)
+        {
+            tiempoTranscurrido += Time.deltaTime;
+            audio.volume = Mathf.Lerp(volumenInicial, 0f, tiempoTranscurrido / duracion);
+            yield return null;
+        }
+
+        audio.Stop();
+        audio.volume = volumenInicial; // Restaurar volumen para próxima vez
+    }
 
 
     IEnumerator GirarHaciaPuertas(Transform camara, float duracion)
