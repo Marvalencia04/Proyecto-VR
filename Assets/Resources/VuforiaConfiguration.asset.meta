@@ -6,10 +6,3 @@ NativeFormatImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 163598
-  packageName: Vuforia Engine
-  packageVersion: 11.4.4
-  assetPath: Assets/Resources/VuforiaConfiguration.asset
-  uploadId: 787602

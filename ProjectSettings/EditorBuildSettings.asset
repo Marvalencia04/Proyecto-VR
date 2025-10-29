@@ -8,5 +8,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/SamplesResources/Scenes/0-Main.unity
     guid: a09cb257d566c489595b16ab37547666
+  - enabled: 1
+    path: Assets/Sprint2/EMILIO/Scenes/JuegoAR.unity
+    guid: 059f2757bd3b622419bbc57f17891217
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
