@@ -5,11 +5,20 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/SamplesResources/Scenes/0-Main.unity
     guid: a09cb257d566c489595b16ab37547666
-  - enabled: 1
+  - enabled: 0
     path: Assets/Sprint2/EMILIO/Scenes/JuegoAR.unity
     guid: 059f2757bd3b622419bbc57f17891217
+  - enabled: 1
+    path: Assets/Sprint2/ADRI/MainMenu.unity
+    guid: c36c217e8ce6f114b8b57e3d2841b1a3
+  - enabled: 1
+    path: Assets/Sprint2/JuegoARFinal.unity
+    guid: e801abafaee1a0845b21d1bd9de7e21b
+  - enabled: 1
+    path: Assets/Scenes/Diego/Trailer.unity
+    guid: 3b28281615ed0b74eaac528e3a717edc
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
