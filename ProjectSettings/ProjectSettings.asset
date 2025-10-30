@@ -988,8 +988,8 @@ PlayerSettings:
       PrivateNetworkClientServer: False
       InternetClientServer: False
       VideosLibrary: False
+      BackgroundMediaPlayback: False
       Objects3D: False
-      InternetClient: True
       RemoteSystem: False
       BlockedChatMessages: False
       PhoneCall: False
@@ -1010,9 +1010,9 @@ PlayerSettings:
       PointOfService: False
       RecordedCallsFolder: False
       Contacts: False
+      InternetClient: True
       Proximity: False
       CodeGeneration: False
-      BackgroundMediaPlayback: False
       EnterpriseAuthentication: False
   metroTargetDeviceFamilies:
     Desktop: False
@@ -1079,7 +1079,7 @@ PlayerSettings:
   cloudProjectId: 8aa983de-9f88-4ac3-b3eb-881e4ef264d2
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: 
+  projectName: Intro VR 2025-10-03_16-13-26
   organizationId: marmayus
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 1
