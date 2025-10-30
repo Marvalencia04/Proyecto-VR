@@ -21,13 +21,18 @@ public class CarControl : MonoBehaviour
     public float spinDuration = 1f;
     public float spinCooldown = 3f;
     public float spinMoveSpeed = 5f;
+    [Tooltip("Si esta activado, el spin recorrera exactamente esta distancia (m) en el tiempo de spin.")]
+    public bool useSpinDistance = true;
+    [Tooltip("Distancia total que recorre el coche durante el spin (en metros).")]
+    public float spinTravelDistance = 1f;
 
-    [Header("Modo Edicion - Solo Teclado")]
-    public bool editMode = false;
-    public float scaleSpeed = 0.5f;
-    public float rotationSpeed = 50f;
+    [Header("Modo Edicion - Siempre Activo en Movil")]
+    public float scaleSpeed = 0.01f;
+    public float rotationSpeed = 2f;
     public float minScale = 0.3f;
     public float maxScale = 3f;
+    [Tooltip("Distancia minima para detectar rotacion con un dedo (en pixeles)")]
+    public float rotationDragThreshold = 20f;
 
     private WheelControl[] wheels;
     private Rigidbody rigidBody;
@@ -41,6 +46,14 @@ public class CarControl : MonoBehaviour
     private float spinStartTime;
     private float spinStartRotation;
     private Vector3 spinDirection;
+    private float spinMoveSpeedRuntime;
+
+    // Variables para gestos tactiles
+    private float initialPinchDistance = 0f;
+    private bool isPinching = false;
+    private Vector2 lastSingleTouchPosition;
+    private bool isDraggingCar = false;
+    private float rotationStartY = 0f;
 
     void Start()
     {
@@ -67,32 +80,32 @@ public class CarControl : MonoBehaviour
     void Update()
     {
         HandleSpin();
-        HandleEditMode();
+        HandleMobileEditGestures();
 
-        // Controles de teclado para habilidades especiales (solo si no esta en modo edicion)
-        if (!editMode)
+        // Controles de teclado (solo para PC)
+        if (Input.GetKeyDown(KeyCode.R))
         {
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                ResetCar();
-            }
-
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                Jump();
-            }
-
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                Spin360();
-            }
+            ResetCar();
         }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            Jump();
+        }
+
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            Spin360();
+        }
+
+        // Modo edicion con teclado (solo para PC)
+        HandleKeyboardEdit();
     }
 
     void FixedUpdate()
     {
-        // Si esta en modo edicion o en medio de un spin, no permite control normal
-        if (editMode || isSpinning)
+        // Si esta en medio de un spin, no permite control normal
+        if (isSpinning)
         {
             return;
         }
@@ -137,6 +150,153 @@ public class CarControl : MonoBehaviour
                 wheel.WheelCollider.brakeTorque = Mathf.Abs(vInput) * brakeTorque;
             }
         }
+    }
+
+    void HandleMobileEditGestures()
+    {
+        // Solo procesa gestos tactiles en dispositivos moviles
+        if (Input.touchCount == 0)
+        {
+            isPinching = false;
+            isDraggingCar = false;
+            return;
+        }
+
+        // PINCH ZOOM - Dos dedos para escalar
+        if (Input.touchCount == 2)
+        {
+            Touch touch0 = Input.GetTouch(0);
+            Touch touch1 = Input.GetTouch(1);
+
+            // Cancela drag si habia uno activo
+            isDraggingCar = false;
+
+            if (touch0.phase == TouchPhase.Began || touch1.phase == TouchPhase.Began)
+            {
+                // Inicia pinch
+                initialPinchDistance = Vector2.Distance(touch0.position, touch1.position);
+                isPinching = true;
+            }
+            else if ((touch0.phase == TouchPhase.Moved || touch1.phase == TouchPhase.Moved) && isPinching)
+            {
+                // Calcula nueva distancia
+                float currentPinchDistance = Vector2.Distance(touch0.position, touch1.position);
+                float pinchDelta = currentPinchDistance - initialPinchDistance;
+
+                // Escala el coche
+                ScaleCarMobile(pinchDelta * scaleSpeed);
+
+                // Actualiza distancia inicial
+                initialPinchDistance = currentPinchDistance;
+            }
+        }
+        // SINGLE TOUCH - Un dedo para rotar (si toca sobre el coche)
+        else if (Input.touchCount == 1)
+        {
+            Touch touch = Input.GetTouch(0);
+
+            // Cancela pinch si habia uno activo
+            isPinching = false;
+
+            if (touch.phase == TouchPhase.Began)
+            {
+                // Verifica si el toque esta sobre el coche
+                if (IsTouchOverCar(touch.position))
+                {
+                    isDraggingCar = true;
+                    lastSingleTouchPosition = touch.position;
+                    rotationStartY = transform.localEulerAngles.y;
+                }
+            }
+            else if (touch.phase == TouchPhase.Moved && isDraggingCar)
+            {
+                // Calcula movimiento horizontal
+                float deltaX = touch.position.x - lastSingleTouchPosition.x;
+
+                // Solo rota si el movimiento es significativo
+                if (Mathf.Abs(deltaX) > rotationDragThreshold * Time.deltaTime)
+                {
+                    RotateCarMobile(deltaX * rotationSpeed * Time.deltaTime);
+                }
+
+                lastSingleTouchPosition = touch.position;
+            }
+            else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+            {
+                isDraggingCar = false;
+            }
+        }
+    }
+
+    void HandleKeyboardEdit()
+    {
+        // Escalado con rueda del raton (PC)
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (Mathf.Abs(scroll) > 0.01f)
+        {
+            ScaleCar(scroll);
+        }
+
+        // Rotacion con teclas U e I (PC)
+        if (Input.GetKey(KeyCode.U))
+        {
+            RotateCar(-1f);
+        }
+        else if (Input.GetKey(KeyCode.I))
+        {
+            RotateCar(1f);
+        }
+    }
+
+    bool IsTouchOverCar(Vector2 touchPosition)
+    {
+        // Convierte posicion de toque a rayo
+        Ray ray = Camera.main.ScreenPointToRay(touchPosition);
+        RaycastHit hit;
+
+        // Verifica si el rayo golpea el coche
+        if (Physics.Raycast(ray, out hit, 100f))
+        {
+            // Verifica si el objeto golpeado es parte del coche
+            if (hit.transform.IsChildOf(transform) || hit.transform == transform)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void ScaleCarMobile(float scaleDelta)
+    {
+        Vector3 currentScale = transform.localScale;
+        float newScaleValue = currentScale.x + scaleDelta;
+        newScaleValue = Mathf.Clamp(newScaleValue, minScale, maxScale);
+        transform.localScale = new Vector3(newScaleValue, newScaleValue, newScaleValue);
+    }
+
+    void RotateCarMobile(float rotationDelta)
+    {
+        transform.Rotate(0, rotationDelta, 0, Space.World);
+    }
+
+    void ScaleCar(float scrollDelta)
+    {
+        // Version PC con rueda del raton
+        Vector3 currentScale = transform.localScale;
+        float scaleChange = scrollDelta * 0.5f;
+        float newScaleValue = currentScale.x + scaleChange;
+        newScaleValue = Mathf.Clamp(newScaleValue, minScale, maxScale);
+        transform.localScale = new Vector3(newScaleValue, newScaleValue, newScaleValue);
+        Debug.Log("Escala: " + newScaleValue.ToString("F2") + "x");
+    }
+
+    void RotateCar(float direction)
+    {
+        // Version PC con teclas
+        float rotationAmount = direction * 50f * Time.deltaTime;
+        transform.Rotate(0, rotationAmount, 0, Space.World);
+        Debug.Log("Rotacion: " + transform.localEulerAngles.y.ToString("F1") + " grados");
     }
 
     float GetVerticalInput()
@@ -209,120 +369,11 @@ public class CarControl : MonoBehaviour
             currentRotation.y = spinStartRotation + (360f * progress);
             transform.localEulerAngles = currentRotation;
 
-            // Mueve el coche en la direccion capturada durante el spin
             if (spinDirection.magnitude > 0.1f && rigidBody != null)
             {
-                rigidBody.linearVelocity = spinDirection * spinMoveSpeed;
+                rigidBody.linearVelocity = spinDirection * spinMoveSpeedRuntime;
             }
         }
-    }
-
-    void HandleEditMode()
-    {
-        // Toggle modo edicion con Tab
-        if (Input.GetKeyDown(KeyCode.Tab))
-        {
-            editMode = !editMode;
-
-            if (editMode)
-            {
-                EnableEditMode();
-            }
-            else
-            {
-                DisableEditMode();
-            }
-        }
-
-        // Solo permite edicion si el modo esta activo
-        if (!editMode)
-        {
-            return;
-        }
-
-        // ESCALADO con rueda del raton
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        if (Mathf.Abs(scroll) > 0.01f)
-        {
-            ScaleCar(scroll);
-        }
-
-        // ROTACION con teclas U e I
-        if (Input.GetKey(KeyCode.U))
-        {
-            RotateCar(-1f);
-        }
-        else if (Input.GetKey(KeyCode.I))
-        {
-            RotateCar(1f);
-        }
-    }
-
-    void EnableEditMode()
-    {
-        Debug.Log("MODO EDICION ACTIVADO");
-        Debug.Log("- Rueda del raton: Escalar coche");
-        Debug.Log("- U/I: Rotar coche");
-        Debug.Log("- Tab: Salir del modo edicion");
-
-        // Detiene el coche
-        if (rigidBody != null)
-        {
-            rigidBody.linearVelocity = Vector3.zero;
-            rigidBody.angularVelocity = Vector3.zero;
-            rigidBody.isKinematic = true; // Desactiva fisica temporalmente
-        }
-
-        // Detiene las ruedas
-        if (wheels != null)
-        {
-            foreach (var wheel in wheels)
-            {
-                if (wheel.WheelCollider != null)
-                {
-                    wheel.WheelCollider.motorTorque = 0f;
-                    wheel.WheelCollider.brakeTorque = 1000f;
-                }
-            }
-        }
-    }
-
-    void DisableEditMode()
-    {
-        Debug.Log("MODO EDICION DESACTIVADO - Modo conduccion activo");
-
-        // Reactiva fisica
-        if (rigidBody != null)
-        {
-            rigidBody.isKinematic = false;
-        }
-    }
-
-    void ScaleCar(float scrollDelta)
-    {
-        // Obtiene la escala actual
-        Vector3 currentScale = transform.localScale;
-
-        // Calcula nueva escala
-        float scaleChange = scrollDelta * scaleSpeed;
-        float newScaleValue = currentScale.x + scaleChange;
-
-        // Limita la escala
-        newScaleValue = Mathf.Clamp(newScaleValue, minScale, maxScale);
-
-        // Aplica escala uniforme
-        transform.localScale = new Vector3(newScaleValue, newScaleValue, newScaleValue);
-
-        Debug.Log("Escala: " + newScaleValue.ToString("F2") + "x");
-    }
-
-    void RotateCar(float direction)
-    {
-        // Rota el coche alrededor del eje Y (vertical)
-        float rotationAmount = direction * rotationSpeed * Time.deltaTime;
-        transform.Rotate(0, rotationAmount, 0, Space.World);
-
-        Debug.Log("Rotacion: " + transform.localEulerAngles.y.ToString("F1") + " grados");
     }
 
     public float GetCurrentSpeed()
@@ -408,111 +459,36 @@ public class CarControl : MonoBehaviour
         // Captura la direccion actual del movimiento
         if (rigidBody != null)
         {
-            spinDirection = rigidBody.linearVelocity.normalized;
-
-            // Si no se esta moviendo, captura el input del joystick/teclado
-            if (spinDirection.magnitude < 0.1f)
-            {
-                float vInput = GetVerticalInput();
-                float hInput = GetHorizontalInput();
-
-                Vector3 forward = transform.forward * vInput;
-                Vector3 right = transform.right * hInput;
-                spinDirection = (forward + right).normalized;
-            }
+            float hInput = GetHorizontalInput();
+            Vector3 right = transform.right * hInput;
+            spinDirection = right.normalized;
         }
 
         // Inicia el spin
         isSpinning = true;
         spinStartTime = Time.time;
         spinStartRotation = transform.localEulerAngles.y;
-
         lastSpinTime = Time.time;
+
+        // Calcula la velocidad para este spin
+        if (useSpinDistance)
+        {
+            spinMoveSpeedRuntime = (spinDuration > 0f) ? (spinTravelDistance / spinDuration) : 0f;
+        }
+        else
+        {
+            spinMoveSpeedRuntime = spinMoveSpeed;
+        }
 
         if (spinDirection.magnitude > 0.1f)
         {
-            Debug.Log("Spin 360 grados con movimiento!");
+            Debug.Log(useSpinDistance
+                ? "Spin 360 con desplazamiento de " + spinTravelDistance.ToString("F2") + " m."
+                : "Spin 360 grados con movimiento (velocidad).");
         }
         else
         {
             Debug.Log("Spin 360 grados!");
-        }
-    }
-
-    // Para debugging
-    void OnGUI()
-    {
-        // Modo edicion con fondo destacado
-        if (editMode)
-        {
-            GUI.backgroundColor = Color.yellow;
-            GUI.Box(new Rect(10, 10, 320, 200), "");
-            GUI.backgroundColor = Color.white;
-
-            GUI.Label(new Rect(20, 20, 300, 30), "MODO EDICION ACTIVO");
-            GUI.Label(new Rect(20, 45, 300, 20), "----------------------------");
-            GUI.Label(new Rect(20, 65, 300, 20), "Rueda Raton: Escalar");
-            GUI.Label(new Rect(20, 85, 300, 20), "U: Rotar Izquierda");
-            GUI.Label(new Rect(20, 105, 300, 20), "I: Rotar Derecha");
-            GUI.Label(new Rect(20, 125, 300, 20), "Tab: Salir");
-            GUI.Label(new Rect(20, 145, 300, 20), "----------------------------");
-            GUI.Label(new Rect(20, 165, 300, 20), "Escala: " + transform.localScale.x.ToString("F2") + "x");
-            GUI.Label(new Rect(20, 185, 300, 20), "Rotacion: " + transform.localEulerAngles.y.ToString("F1") + " grados");
-        }
-        else
-        {
-            float speed = GetCurrentSpeed();
-            GUI.Label(new Rect(10, 10, 300, 20), "Velocidad: " + speed.ToString("F2") + " m/s");
-            GUI.Label(new Rect(10, 30, 300, 20), "Velocidad: " + (speed * 3.6f).ToString("F0") + " km/h");
-
-            if (steeringWheel != null)
-            {
-                GUI.Label(new Rect(10, 50, 300, 20), "Direccion: " + steeringWheel.GetSteeringInput().ToString("F2"));
-            }
-
-            GUI.Label(new Rect(10, 70, 300, 20), "Controles PC:");
-            GUI.Label(new Rect(10, 90, 300, 20), "W = Acelerar | Q/S = Frenar");
-            GUI.Label(new Rect(10, 110, 300, 20), "A = Izquierda | D = Derecha");
-            GUI.Label(new Rect(10, 130, 300, 20), "R = Reset | Space = Salto | E = Spin");
-            GUI.Label(new Rect(10, 150, 300, 20), "Tab = Modo Edicion");
-
-            // Muestra cooldowns
-            float jumpCooldownRemaining = jumpCooldown - (Time.time - lastJumpTime);
-            float spinCooldownRemaining = spinCooldown - (Time.time - lastSpinTime);
-
-            if (jumpCooldownRemaining > 0)
-            {
-                GUI.Label(new Rect(10, 170, 300, 20), "Salto: " + jumpCooldownRemaining.ToString("F1") + "s");
-            }
-
-            if (spinCooldownRemaining > 0)
-            {
-                GUI.Label(new Rect(10, 190, 300, 20), "Spin: " + spinCooldownRemaining.ToString("F1") + "s");
-            }
-
-            if (isSpinning)
-            {
-                GUI.Label(new Rect(10, 210, 300, 20), "SPINNING!");
-            }
-        }
-    }
-
-    void OnDrawGizmos()
-    {
-        // Dibuja direccion del spin
-        if (isSpinning && spinDirection.magnitude > 0.1f)
-        {
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawLine(transform.position, transform.position + spinDirection * 3f);
-            Gizmos.DrawSphere(transform.position + spinDirection * 3f, 0.2f);
-        }
-
-        // Dibuja indicador del modo edicion
-        if (editMode)
-        {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireSphere(transform.position, 1f);
-            Gizmos.DrawWireCube(transform.position + Vector3.up * 0.5f, Vector3.one * 0.3f);
         }
     }
 }
