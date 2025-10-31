@@ -3,6 +3,7 @@ using UnityEngine.Video;
 using UnityEngine.UI;
 using Vuforia;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 public class ARVideoTapController : MonoBehaviour
 {
@@ -100,5 +101,11 @@ public class ARVideoTapController : MonoBehaviour
         double len = videoPlayer.length > 0 ? videoPlayer.length : double.MaxValue;
         double newTime = Mathf.Clamp((float)videoPlayer.time + delta, 0f, (float)len);
         videoPlayer.time = newTime;
+    }
+
+    public void Salir()
+    {
+        // Cargar la escena especificada
+        SceneManager.LoadScene("MainMenu");
     }
 }

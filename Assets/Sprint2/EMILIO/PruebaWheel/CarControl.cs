@@ -173,9 +173,13 @@ public class CarControl : MonoBehaviour
 
             if (touch0.phase == TouchPhase.Began || touch1.phase == TouchPhase.Began)
             {
-                // Inicia pinch
-                initialPinchDistance = Vector2.Distance(touch0.position, touch1.position);
-                isPinching = true;
+                if (IsTouchOverCar(touch0.position))
+                {
+                    // Inicia pinch
+                    initialPinchDistance = Vector2.Distance(touch0.position, touch1.position);
+                    isPinching = true;
+                }
+                
             }
             else if ((touch0.phase == TouchPhase.Moved || touch1.phase == TouchPhase.Moved) && isPinching)
             {
