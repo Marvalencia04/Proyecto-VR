@@ -1067,12 +1067,12 @@ MonoBehaviour:
   PagePrefab: {fileID: 1401911810}
   Indicador: {fileID: 1926185381}
   Pages:
-  - Titulo: Bienvendo!
+  - Titulo: Bienvenido!
     Cuerpo: "Hola! Bienvenido a \"The Dealer's cut\". Aqu\xED podr\xE1s aprender
       a como utilizar y jugar a nuestro juego."
     Imagen: {fileID: 0}
   - Titulo: Marcas
-    Cuerpo: "Para poder hacer ciertas opciones del menu, una vez dentro de ellas,
+    Cuerpo: "Para poder hacer ciertas opciones del men\xFA, una vez dentro de ellas,
       tendr\xE1s que utilizar las marcas adecuadas."
     Imagen: {fileID: 0}
   - Titulo: Marcas Juego
@@ -1086,7 +1086,7 @@ MonoBehaviour:
   - Titulo: Marcas Trailer
     Cuerpo: Dentro de "Trailer", la marca a utilizar, es la que se muestra en la
       imagen de abajo.
-    Imagen: {fileID: 21300000, guid: b3560b7ac25dc6e47aef8a41cd638c3a, type: 3}
+    Imagen: {fileID: 21300000, guid: 42720f84f870783468d01dda4eb373b5, type: 3}
   - Titulo: Listo!
     Cuerpo: "Y ya est\xE1! Ya est\xE1s listo para jugar!"
     Imagen: {fileID: 21300000, guid: 294035f552606ff4989b3bbad8cdfcf2, type: 3}
